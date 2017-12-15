@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import t from './intl';
 
 export default class LimitCheckerImpl implements LimitChecker {
-  private log = getLogger(this.constructor.name);
+  private readonly log = getLogger(this.constructor.name);
   private limits: Limit[];
 
   constructor(
@@ -17,7 +17,8 @@ export default class LimitCheckerImpl implements LimitChecker {
     this.limits = [
       new MaxNetExposureLimit(configStore, positionService),
       new InvertedSpreadLimit(spreadAnalysisResult),
-      new TargetProfitLimit(configStore, spreadAnalysisResult),
+      new MinTargetProfitLimit(configStore, spreadAnalysisResult),
+      new MaxTargetProfitLimit(configStore, spreadAnalysisResult),
       new DemoModeLimit(configStore)
     ];
   }
@@ -40,7 +41,7 @@ interface Limit {
 }
 
 class MaxNetExposureLimit implements Limit {
-  private log = getLogger('MaxNetExposureLimit');
+  private readonly log = getLogger('MaxNetExposureLimit');
 
   constructor(
     private readonly configStore: ConfigStore,
@@ -53,13 +54,13 @@ class MaxNetExposureLimit implements Limit {
       return { success };
     }
     const reason = 'Max exposure breached';
-    this.log.info(t('NetExposureIsLargerThanMaxNetExposure'));
+    this.log.info(t`NetExposureIsLargerThanMaxNetExposure`);
     return { success, reason };
   }
 }
 
 class InvertedSpreadLimit implements Limit {
-  private log = getLogger('InvertedSpreadLimit');
+  private readonly log = getLogger('InvertedSpreadLimit');
 
   constructor(private readonly spreadAnalysisResult: SpreadAnalysisResult) { }
 
@@ -69,13 +70,13 @@ class InvertedSpreadLimit implements Limit {
       return { success };
     }
     const reason = 'Spread not inverted';
-    this.log.info(t('NoArbitrageOpportunitySpreadIsNotInverted'));
+    this.log.info(t`NoArbitrageOpportunitySpreadIsNotInverted`);
     return { success, reason };
   }
 }
 
-class TargetProfitLimit implements Limit {
-  private log = getLogger('TargetProfitLimit');
+class MinTargetProfitLimit implements Limit {
+  private readonly log = getLogger('TargetProfitLimit');
 
   constructor(
     private readonly configStore: ConfigStore,
@@ -87,7 +88,7 @@ class TargetProfitLimit implements Limit {
       return { success };
     }
     const reason = 'Too small profit';
-    this.log.info(t('TargetProfitIsSmallerThanMinProfit'));
+    this.log.info(t`TargetProfitIsSmallerThanMinProfit`);
     return { success, reason };
   }
 
@@ -104,8 +105,38 @@ class TargetProfitLimit implements Limit {
   }
 }
 
+class MaxTargetProfitLimit implements Limit {
+  private readonly log = getLogger('MaxTargetProfitLimit');
+
+  constructor(
+    private readonly configStore: ConfigStore,
+    private readonly spreadAnalysisResult: SpreadAnalysisResult) { }
+
+  check() {
+    const success = this.isProfitSmallerThanLimit();
+    if (success) {
+      return { success };
+    }
+    const reason = 'Too large profit';
+    this.log.info(t`TargetProfitIsLargerThanMaxProfit`);
+    return { success, reason };
+  }
+
+  private isProfitSmallerThanLimit(): boolean {
+    const { config } = this.configStore;
+    const { bestBid, bestAsk, targetVolume, targetProfit } = this.spreadAnalysisResult;
+    const maxTargetProfit = _.min([
+      config.maxTargetProfit,
+      config.maxTargetProfitPercent !== undefined ?
+        _.round((config.maxTargetProfitPercent / 100) * _.mean([bestAsk.price, bestBid.price]) * targetVolume) :
+        Number.MAX_SAFE_INTEGER
+    ]) as number;
+    return targetProfit <= maxTargetProfit;
+  }
+}
+
 class DemoModeLimit implements Limit {
-  private log = getLogger('DemoModeLimit');
+  private readonly log = getLogger('DemoModeLimit');
 
   constructor(private readonly configStore: ConfigStore) { }
 
@@ -115,7 +146,7 @@ class DemoModeLimit implements Limit {
       return { success };
     }
     const reason = 'Demo mode';
-    this.log.info(t('ThisIsDemoModeNotSendingOrders'));
+    this.log.info(t`ThisIsDemoModeNotSendingOrders`);
     return { success, reason };
   }
 }

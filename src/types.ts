@@ -37,6 +37,7 @@ export interface SpreadAnalysisResult {
   availableVolume: number;
   targetVolume: number;
   targetProfit: number;
+  profitPercentAgainstNotional: number;
 }
 
 export interface LimitChecker {
@@ -169,6 +170,8 @@ export class ConfigRoot extends TypeConverter {
   @cast minSize: number;
   @cast minTargetProfit: number;
   @cast minTargetProfitPercent: number;
+  @cast maxTargetProfit: number;
+  @cast maxTargetProfitPercent: number;
   @cast iterationInterval: number;
   @cast positionRefreshInterval: number;
   @cast sleepAfterSend: number;

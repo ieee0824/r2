@@ -14,16 +14,16 @@ import { LOT_MIN_DECIMAL_PLACE } from './constants';
 
 @injectable()
 export default class SpreadAnalyzerImpl implements SpreadAnalyzer {
-  private log = getLogger(this.constructor.name);
+  private readonly log = getLogger(this.constructor.name);
 
   constructor(
     @inject(symbols.ConfigStore) private readonly configStore: ConfigStore
   ) { }
 
   async analyze(quotes: Quote[], positionMap: BrokerMap<BrokerPosition>): Promise<SpreadAnalysisResult> {
-    this.log.info(t('AnalyzingQuotes'));
-    const config = this.configStore.config;
-    if (_.values(positionMap).length === 0) {
+    this.log.info(t`AnalyzingQuotes`);
+    const { config } = this.configStore;
+    if (_.isEmpty(positionMap)) {
       throw new Error('Position map is empty.');
     }
     const filteredQuotes = _(quotes)
@@ -34,9 +34,9 @@ export default class SpreadAnalyzerImpl implements SpreadAnalyzer {
     const bestAsk = _(filteredQuotes).filter(q => q.side === QuoteSide.Ask).first();
     const bestBid = _(filteredQuotes).filter(q => q.side === QuoteSide.Bid).last();
     if (bestBid === undefined) {
-      throw new Error(t('NoBestBidWasFound'));
+      throw new Error(t`NoBestBidWasFound`);
     } else if (bestAsk === undefined) {
-      throw new Error(t('NoBestAskWasFound'));
+      throw new Error(t`NoBestAskWasFound`);
     }
 
     const invertedSpread = bestBid.price - bestAsk.price;
@@ -47,13 +47,16 @@ export default class SpreadAnalyzerImpl implements SpreadAnalyzer {
     targetVolume = _.floor(targetVolume, LOT_MIN_DECIMAL_PLACE);
     const commission = this.calculateTotalCommission([bestBid, bestAsk], targetVolume);
     const targetProfit = _.round(invertedSpread * targetVolume - commission);
+    const midNotional = _.mean([bestAsk.price, bestBid.price]) * targetVolume;
+    const profitPercentAgainstNotional = _.round((targetProfit / midNotional) * 100, LOT_MIN_DECIMAL_PLACE);
     const spreadAnalysisResult = {
       bestBid,
       bestAsk,
       invertedSpread,
       availableVolume,
       targetVolume,
-      targetProfit
+      targetProfit,
+      profitPercentAgainstNotional
     };
     this.log.debug(`Analysis done. Result: ${JSON.stringify(spreadAnalysisResult)}`);
     return spreadAnalysisResult;

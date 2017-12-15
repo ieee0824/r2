@@ -37,10 +37,13 @@ export const en = {
   SuccessfullyStartedTheService: 'Successfully started the service.',
   SuccessfullyStoppedTheService: 'Successfully stopped the service.',
   TargetProfitIsSmallerThanMinProfit: 'Target profit is smaller than min profit.',
+  TargetProfitIsLargerThanMaxProfit: 'Targetprofit is larger than max profit.',
   TargetVolume: 'Target volume',
   ThisIsDemoModeNotSendingOrders: '>>This is Demo mode. Not sending orders.',
   AnalyzingQuotes: 'Analyzing quotes...',
   WaitingForPositionService: 'Waiting for Position Service...',
+  FilledSummary: 'Filled: %s %s %d BTC filled at %s',
+  UnfilledSummary: 'Pending: %s %s %d BTC sent at %s, pending size %d BTC'
 };
 
 export const ja = {
@@ -81,8 +84,11 @@ export const ja = {
   SuccessfullyStartedTheService: 'サービスの開始完了。',
   SuccessfullyStoppedTheService: 'サービスの停止完了。',
   TargetProfitIsSmallerThanMinProfit: '裁定機会なし。目標収益 < 最小収益設定',
+  TargetProfitIsLargerThanMaxProfit: '目標収益 > 最大収益設定',
   TargetVolume: '目標数量　　',
   ThisIsDemoModeNotSendingOrders: '>>現在デモモードです。オーダーは送信しません。',
   AnalyzingQuotes: '板情報解析中...',
   WaitingForPositionService: 'ポジションサービスの待機中...',
+  FilledSummary: '>>約定済み: %s %s %d BTC 約定価格 %s',
+  UnfilledSummary: '>>執行中: %s %s %d BTC 指値 %s, 残り数量 %d BTC'
 };
